@@ -1,0 +1,55 @@
+{
+  "name": "@dsh-external/dsh-browser-use",
+  "version": "0.1.1",
+  "description": "DSH 浏览器操作：ARIA 快照优先的导航/点击/输入/截图/多标签工具 + 右侧栏实时投屏面板",
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "skills",
+    "cordis.patch.yml",
+    "NOTICE"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hu568/dsh-plugin-browser-use.git"
+  },
+  "homepage": "https://github.com/hu568/dsh-plugin-browser-use#readme",
+  "bugs": {
+    "url": "https://github.com/hu568/dsh-plugin-browser-use/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "dsh-plugin-pack",
+    "cordis",
+    "cordis-plugin",
+    "browser",
+    "playwright"
+  ],
+  "dependencies": {
+    "playwright-core": "^1.56.1"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-slots"
+      ],
+      "platform": "web"
+    }
+  }
+}

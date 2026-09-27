@@ -1,0 +1,15 @@
+@dsh-external/dsh-browser-use
+Copyright (c) 2026 hu568 (https://github.com/hu568)
+
+This package is a port of the browser automation plugin and the
+`control-browser` skill from ZCode.
+
+  ZCode — https://github.com/zai-org/ZCode
+  Copyright Z.ai
+  Licensed under the Apache License, Version 2.0
+  (http://www.apache.org/licenses/LICENSE-2.0)
+
+The "ARIA snapshot first" operating model, the tool surface, and the
+`control-browser` skill's workflow constraints are adapted from that project.
+This package is licensed under the MIT License (see LICENSE); the attribution
+above is retained in compliance with the source project's Apache-2.0 license.

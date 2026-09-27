@@ -1,0 +1,6 @@
+# 由 dsh-plugin-pack-wsl 补齐的装配层：把 browser-use 插件行插入宿主组合。
+# 原包缺少 dsh.bundle 声明，只能靠 super-injector 运行时注入生效。
+- insert:
+    - id: dsh-browser-use
+      name: '@dsh-external/dsh-browser-use'
+      config: {}
