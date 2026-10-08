@@ -70,9 +70,15 @@ dsh plugin --profile <profile> add github:hu568/dsh-plugin-browser-use
 
 > 路由前缀**不带 `api` 段**（对比：`dsh-persona-memory` 是 `/persona-memory/api/…`）。
 
-`open-local` 的启动器按序尝试：**PowerShell `Start-Process -PassThru`**（首选，能回显实际
-拉起的进程名）→ `cmd /c start`（须把 `cwd` 设为 Windows 路径，否则 UNC 工作目录会告警）→
-`wslview` → `xdg-open`。
+`open-local` 的启动器按平台区分：
+
+- **Windows 原生进程**（DSH 桌面端 Electron，或裸 Node 跑在 Windows 上）：
+  1. `powershell.exe`（从 `C:\Windows\System32\WindowsPowerShell\v1.0\` 与 SysWOW64 探测，
+     再从 PATH 解析），首选能 `PassThru` 回显进程名。
+  2. `cmd.exe`（`ComSpec` 或 `C:\Windows\System32\cmd.exe`），`/c start "" "<url>"`——
+     第一个空字符串是窗口标题占位，避免 URL 含空格 / `&` 时被 cmd 解析吞掉。
+- **WSL 子进程**：保留原 WSL 链——`/mnt/c/Windows/...` 下的 PowerShell / cmd（cmd 的
+  `cwd` 必须为 Windows 路径，否则 UNC 工作目录会告警）→ `wslview` → `xdg-open`。
 
 > 坑：**不要用 `explorer.exe` 开 URL**。它是文件资源管理器，传 URL 进去弹的是资源管理器窗口
 > 而不是浏览器——这是初版的实际 bug。URL 要走 ShellExecute 语义。
