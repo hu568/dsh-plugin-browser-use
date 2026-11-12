@@ -66,6 +66,8 @@ dsh plugin --profile <profile> add github:hu568/dsh-plugin-browser-use
 | `GET /browser-panel/stream` | `multipart/x-mixed-replace` 实时画面（MJPEG） |
 | `POST /browser-panel/navigate` | `{"url":"…"}` 让 **AI 的**浏览器前往 |
 | `POST /browser-panel/open-local` | `{"url":"…"}` 用**用户自己的**桌面浏览器打开 |
+| `POST /browser-panel/view` | `{"maxWidth":660}` 面板报自己的物理像素宽：投屏按这个宽度出帧 |
+| `POST /browser-panel/viewport` | `{"width":544}` 把 Agent 浏览器的视口改成栏宽（「按栏宽」）；`{"width":0}` 恢复桌面宽度 |
 | `POST /browser-panel/input` | 转发用户输入，见下 |
 
 > 路由前缀**不带 `api` 段**（对比：`dsh-persona-memory` 是 `/persona-memory/api/…`）。
@@ -83,8 +85,29 @@ dsh plugin --profile <profile> add github:hu568/dsh-plugin-browser-use
 > 坑：**不要用 `explorer.exe` 开 URL**。它是文件资源管理器，传 URL 进去弹的是资源管理器窗口
 > 而不是浏览器——这是初版的实际 bug。URL 要走 ShellExecute 语义。
 
-投屏以 CDP `Page.startScreencast` 为主（页面变化即出帧），并配一个 1.5s 兜底帧泵：
+投屏以 CDP `Page.startScreencast` 为主（页面变化即出帧），并配一个 0.9s 兜底帧泵：
 静态页面不会产帧，没有兜底的话「冷连接」的观看端会永久空等。
+
+### 画质与帧率（0.1.3 起）
+
+面板是**窄栏**（右侧栏一般 500~700 物理像素），而 Agent 浏览器默认是 1280×860。老版本把
+1280 宽的帧用 CSS 缩到栏宽，等于重采样两次（CDP 一次 + 合成一次），细字直接糊成一团；
+同时 `everyNthFrame: 2` 又砍掉一半帧。0.1.3 的改法：
+
+| 项 | 0.1.2 | 0.1.3 |
+| --- | --- | --- |
+| 抽帧步长 | `everyNthFrame: 2`（≤30fps） | `1`（≤60fps） |
+| JPEG 质量 | 55（细字振铃明显） | 78 |
+| 出帧尺寸 | 固定视口原始宽度，再由浏览器缩到栏宽 | 面板报宽度 ⇒ 按面板物理像素出帧（1:1 显示，只采样一次） |
+| 静态页兜底帧泵 | 1.5s | 0.9s |
+
+实测（同一回环、同一测试页）：**30.3fps / 43.9KB 每帧** → **60.4fps / 18.8KB 每帧**（帧宽 660 时）。
+帧率翻倍而带宽还降了约 15%。
+
+> 但**缩放不等于清晰**：1280 宽的页面塞进 544 宽的栏，13px 的字无论如何都只剩 6.7px。
+> 真要读字，用面板底部的「按栏宽（更清晰）」：它把 Agent 浏览器的**视口本身**改成栏宽，
+> 页面按窄屏重排、文字回到原字号、投屏 1:1，全程只有一次采样。
+> 这个开关在打开期间会改变 Agent 看到的页面布局（关掉即恢复 1280×860），属于有意为之。
 
 ## 用户接管操作
 
@@ -135,6 +158,9 @@ TypeScript 构建链，也不需要它们。
 ## 已知边界
 
 - Client 半边在**页面刷新后**生效：页面若早于注入加载，其 client 模块不会被 import。
+- 「按栏宽」是**改 Agent 浏览器的视口**，不是改面板显示：开着时 Agent 读到的是窄屏布局
+  （与用户在面板里看到的一致），适合登录/验证码/人工确认这类「人要看清楚」的环节；
+  需要桌面布局时点「恢复桌面宽」即可，插件重载后也会回到配置里的默认视口。
 - `screenshot` 需要部署挂载 attachment 服务。
 - `goto` 只接受 `http:` / `https:` / `about:blank`。
 - 面板路由与 DSH 其余路由同源（loopback），**没有独立鉴权**：本机其他进程也能
