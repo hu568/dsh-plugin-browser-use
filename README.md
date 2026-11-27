@@ -11,7 +11,7 @@ DSH 的浏览器操作能力：让 Agent 真正驱动本机 Chromium 打开、�
 | 许可证 | MIT，见 [LICENSE](./LICENSE)（含 [NOTICE](./NOTICE) 中的 ZCode / Apache-2.0 署名） |
 | 安装规格 | `github:hu568/dsh-plugin-browser-use` |
 | 实测 DSH | `0.1.5-rc.1` ~ `0.1.7-rc.2` |
-| 运行依赖 | `playwright-core ^1.56.1`（从 npm registry 拉取）；浏览器用本机已缓存的 Chrome for Testing |
+| 运行依赖 | `playwright-core ^1.56.1`（从 npm registry 拉取）；浏览器内核自动定位，见下 |
 
 ## 安装
 
@@ -27,6 +27,24 @@ dsh plugin --profile <profile> add github:hu568/dsh-plugin-browser-use
 把 `dsh-browser-use` 这一行插进宿主组合。profile 在运行中通常即时生效，否则重启一次 DSH。
 
 浏览器**懒启动**：第一次调用 `browser_open` 时才拉起，插件卸载/热重载时释放。
+
+### 浏览器内核从哪来（定位顺序）
+
+插件**不要求**你先跑 `npx playwright install`，启动时按下面顺序挑第一个真实存在的可执行文件：
+
+1. 插件配置 `browserPath`（显式指定的绝对路径）；
+2. 当前 `playwright-core` 版本 **期望的那一版** Chromium，即 `browsers.json` 里的 revision
+   （例如 1.65.1 要 `chromium-1255`），在 ms-playwright 缓存里找；
+3. 本机正式版 **Chrome / Edge**；
+4. 缓存里其它任意版本的 Chromium。
+
+> **为什么不是「缓存里挑最新版本号」**：Playwright 的缓存目录会随升级换名并删旧版，
+> 早先的实现把 `chrome-win`（旧布局）写死，新版缓存实际是 `chrome-win64`，于是每次都落到
+> Playwright 自带的查找逻辑，而它只认当前版本 → 升级就是 `Executable doesn't exist at
+> …\chromium_headless_shell-1xxx\…`。现在的顺序保证「缓存换代了也能启动」，
+> 缓存被清空时还能退到本机 Chrome。
+
+启动失败若仍与可执行文件有关，报错会列出试过的三级来源，而不是只叫你去 `npx playwright install`。
 
 > **实现注记**：取 `webServer` 服务时不能只用裸 `ctx.get('webServer')`。宿主 webserver 的
 > fiber 要等 socket 绑定完成才 ACTIVE，而 cordis 的 `ctx.get()` 默认 `strict=true`，加上 Loader
